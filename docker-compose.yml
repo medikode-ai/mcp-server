@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  mcp-server:
+    build: .
+    ports:
+      - "3003:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - API_SERVICE_URL=http://api-service:3000
+      - BACKEND_SERVICE_URL=http://backend-service:3000
+      - SQLITE_DB_PATH=/app/data/usage.db
+      - ALLOWED_ORIGINS=*
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - api-service
+      - backend-service
+    networks:
+      - medikode-network
+
+  api-service:
+    image: medikodeacr.azurecr.io/api-service:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=medikode_db
+      - POSTGRES_USER=medikode_admin
+      - POSTGRES_PASSWORD=MediKode2024!
+      - POSTGRES_PORT=5432
+      - BACKEND_SERVICE_URL=http://backend-service:3000
+      - API_KEY_ENVIRONMENT=dev
+    depends_on:
+      - postgres
+      - backend-service
+    networks:
+      - medikode-network
+
+  backend-service:
+    image: medikodeacr.azurecr.io/backend-service:latest
+    ports:
+      - "3002:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=medikode_db
+      - POSTGRES_USER=medikode_admin
+      - POSTGRES_PASSWORD=MediKode2024!
+      - POSTGRES_PORT=5432
+    depends_on:
+      - postgres
+    networks:
+      - medikode-network
+
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=medikode_db
+      - POSTGRES_USER=medikode_admin
+      - POSTGRES_PASSWORD=MediKode2024!
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    networks:
+      - medikode-network
+
+networks:
+  medikode-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

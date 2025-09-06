@@ -1,0 +1,109 @@
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+require('dotenv').config();
+
+const { validateApiKey } = require('./src/middleware/auth');
+const { initializeDatabase } = require('./src/database/usageLogger');
+const mcpRoutes = require('./src/routes/mcp');
+const capabilitiesRoutes = require('./src/routes/capabilities');
+const healthRoutes = require('./src/routes/health');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Security middleware
+app.use(helmet());
+app.use(cors({
+    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
+    credentials: true
+}));
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Request logging middleware
+app.use((req, res, next) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] ${req.method} ${req.path} - IP: ${req.ip}`);
+    next();
+});
+
+// Health check endpoint (no auth required)
+app.use('/health', healthRoutes);
+
+// API key validation for all other routes
+app.use(validateApiKey);
+
+// MCP routes
+app.use('/mcp', mcpRoutes);
+
+// Capabilities endpoint
+app.use('/capabilities', capabilitiesRoutes);
+
+// Root endpoint
+app.get('/', (req, res) => {
+    res.json({
+        service: 'medikode-mcp-server',
+        version: '1.0.0',
+        description: 'Model Context Protocol server for Medikode healthcare SaaS platform',
+        endpoints: {
+            health: '/health',
+            capabilities: '/capabilities',
+            mcp: '/mcp'
+        },
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    const timestamp = new Date().toISOString();
+    console.error(`[${timestamp}] Error:`, err);
+    
+    res.status(err.status || 500).json({
+        error: err.message || 'Internal server error',
+        timestamp: timestamp,
+        service: 'medikode-mcp-server'
+    });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+    res.status(404).json({
+        error: 'Endpoint not found',
+        timestamp: new Date().toISOString(),
+        service: 'medikode-mcp-server'
+    });
+});
+
+// Initialize database and start server
+async function startServer() {
+    try {
+        await initializeDatabase();
+        console.log('Database initialized successfully');
+        
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`Medikode MCP Server running on port ${PORT}`);
+            console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+            console.log(`API Service URL: ${process.env.API_SERVICE_URL || 'http://localhost:3001'}`);
+        });
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
+}
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    process.exit(0);
+});
+
+process.on('SIGINT', () => {
+    console.log('SIGINT received, shutting down gracefully');
+    process.exit(0);
+});
+
+startServer();
