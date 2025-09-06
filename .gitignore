@@ -136,7 +136,7 @@ build/
 
 # Test files
 test-results/
-coverage/
 
 # Local development
 .local/
+.nvmrc
