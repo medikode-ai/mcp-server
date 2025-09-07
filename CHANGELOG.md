@@ -8,13 +8,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- GitHub Actions workflow for automated testing and publishing
 - Enhanced error handling and logging
 - Support for additional MCP clients
 
 ### Changed
 - Improved documentation and examples
 - Enhanced security measures
+
+## [1.2.4] - 2024-09-07
+
+### Added
+- Node.js 24.7.0 support with modern runtime features
+- Built-in fetch API integration (Node.js 18+)
+- Docker build optimization with .dockerignore
+- Enhanced GitHub Actions workflows
+
+### Changed
+- Upgraded Node.js requirement to >=24.7.0
+- Replaced node-fetch with built-in fetch API for better performance
+- Updated Dockerfile to use modern npm syntax (--omit=dev)
+- Improved package.json formatting and structure
+
+### Fixed
+- Docker build failures with dependency conflicts
+- Package-lock.json sync issues
+- npm cache problems in CI/CD pipelines
+- GitHub Actions workflow compatibility
+
+### Removed
+- node-fetch dependency (no longer needed with Node.js 24.7.0)
+- Deprecated npm flags and commands
+
+### Performance
+- Reduced package size by removing unnecessary dependencies
+- Faster HTTP requests with built-in fetch API
+- Optimized Docker image builds
 
 ## [1.2.1] - 2024-09-07
 
