@@ -9,7 +9,7 @@ const { logUsage } = require('./src/database/usageLogger');
 class MCPServer {
     constructor() {
         this.requestId = 0;
-        this.apiKey = process.env.MCP_API_KEY || 'mk_e434859e2f6b8684ffed0751d6c0ea3d866513327662c9d011e55af59d0f84ff';
+        this.apiKey = process.env.MEDIKODE_API_KEY;
     }
 
     async start() {

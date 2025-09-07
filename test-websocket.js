@@ -1,6 +1,7 @@
 const WebSocket = require('ws');
 
-const ws = new WebSocket('ws://localhost:8004/mcp?x-api-key=mk_e434859e2f6b8684ffed0751d6c0ea3d866513327662c9d011e55af59d0f84ff');
+const API_KEY = process.env.MEDIKODE_API_KEY || 'your-api-key-here';
+const ws = new WebSocket(`ws://localhost:8004/mcp?x-api-key=${API_KEY}`);
 
 ws.on('open', function open() {
     console.log('WebSocket connection opened');

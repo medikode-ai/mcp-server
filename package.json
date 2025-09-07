@@ -1,11 +1,22 @@
 {
-  "name": "medikode-mcp-server",
-  "version": "1.2.0",
+  "name": "@medikode/mcp-server",
+  "version": "1.2.1",
   "description": "Model Context Protocol (MCP) server for Medikode healthcare SaaS platform",
-  "main": "index.js",
+  "main": "mcp-server-stdio.js",
+  "bin": {
+    "medikode-mcp-server": "./mcp-server-stdio.js"
+  },
   "type": "commonjs",
   "engines": {
-    "node": ">=24.0.1"
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/medikode/mcp-server.git"
+  },
+  "homepage": "https://mcp.medikode.ai",
+  "bugs": {
+    "url": "https://github.com/medikode/mcp-server/issues"
   },
   "scripts": {
     "start": "node index.js",
@@ -13,14 +24,20 @@
     "dev:debug": "nodemon --inspect-brk=0.0.0.0:9229 index.js",
     "debug": "node --inspect-brk index.js",
     "debug:attach": "node --inspect index.js",
-    "test:routing": "node test-environment-routing.js"
+    "test:routing": "node test-environment-routing.js",
+    "prepublishOnly": "echo 'Preparing to publish @medikode/mcp-server...'",
+    "prepack": "echo 'Preparing package for distribution...'"
   },
   "keywords": [
     "mcp",
     "model-context-protocol",
     "healthcare",
     "medical-coding",
-    "medikode"
+    "medikode",
+    "claude",
+    "cursor",
+    "ai-assistant",
+    "medical-ai"
   ],
   "author": "Medikode",
   "license": "ISC",

@@ -4,6 +4,7 @@ Test script for integrating Medikode MCP Server with ChatGPT
 This script demonstrates how to use the MCP server tools with OpenAI's function calling
 """
 
+import os
 import requests
 import json
 import openai
@@ -11,8 +12,8 @@ from typing import Dict, Any, List
 
 # Configuration
 MCP_SERVER_URL = "http://localhost:3000"
-OPENAI_API_KEY = "your-openai-api-key-here"  # Replace with your actual OpenAI API key
-MEDIKODE_API_KEY = "your-medikode-api-key-here"  # Replace with your actual Medikode API key
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "your-openai-api-key-here")
+MEDIKODE_API_KEY = os.getenv("MEDIKODE_API_KEY", "your-medikode-api-key-here")
 
 class MedikodeMCPClient:
     """Client for interacting with Medikode MCP Server"""

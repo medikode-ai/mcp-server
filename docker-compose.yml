@@ -27,7 +27,7 @@ services:
       - POSTGRES_HOST=postgres
       - POSTGRES_DB=medikode_db
       - POSTGRES_USER=medikode_admin
-      - POSTGRES_PASSWORD=MediKode2024!
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-your-secure-password}
       - POSTGRES_PORT=5432
       - BACKEND_SERVICE_URL=http://backend-service:3000
       - API_KEY_ENVIRONMENT=dev
@@ -47,7 +47,7 @@ services:
       - POSTGRES_HOST=postgres
       - POSTGRES_DB=medikode_db
       - POSTGRES_USER=medikode_admin
-      - POSTGRES_PASSWORD=MediKode2024!
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-your-secure-password}
       - POSTGRES_PORT=5432
     depends_on:
       - postgres
@@ -61,7 +61,7 @@ services:
     environment:
       - POSTGRES_DB=medikode_db
       - POSTGRES_USER=medikode_admin
-      - POSTGRES_PASSWORD=MediKode2024!
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-your-secure-password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d

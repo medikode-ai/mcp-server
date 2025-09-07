@@ -1,407 +1,300 @@
-# Medikode MCP Server
+# @medikode/mcp-server
 
-A Model Context Protocol (MCP) server that exposes tool-based access to the Medikode healthcare SaaS platform. This server provides AI assistants and applications with structured access to medical coding, validation, and RAF calculation capabilities.
+[![npm version](https://badge.fury.io/js/%40medikode%2Fmcp-server.svg)](https://badge.fury.io/js/%40medikode%2Fmcp-server)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
+[![GitHub stars](https://img.shields.io/github/stars/medikode/mcp-server.svg)](https://github.com/medikode/mcp-server/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/medikode/mcp-server.svg)](https://github.com/medikode/mcp-server/issues)
 
-## Overview
+Model Context Protocol (MCP) server for Medikode's AI-driven medical coding platform. This package enables AI assistants like Claude Desktop, Cursor, and ChatGPT to access Medikode's medical coding tools directly.
 
-The Medikode MCP Server acts as a bridge between AI applications and the Medikode healthcare platform, providing:
+## 🌟 Features
 
-- **Medical Chart Processing**: Analyze patient charts and suggest ICD/CPT codes
-- **Code Validation**: Validate medical codes against patient documentation
-- **RAF Calculation**: Calculate Risk Adjustment Factor scores for patient populations
-- **Usage Tracking**: Comprehensive logging and analytics for API usage
-- **OpenAI Compatibility**: Structured tool definitions compatible with OpenAI's function calling
+- **5 Powerful MCP Tools**: Validate codes, QA charts, parse EOBs, calculate RAF scores, and more
+- **AI Assistant Integration**: Works with Claude Desktop, Cursor, ChatGPT, and other MCP-compatible clients
+- **Secure**: Uses your existing Medikode API keys with the same security and access controls
+- **Fast**: Direct API access with caching for optimal performance
+- **Easy Setup**: Simple configuration with npx - no local installation required
 
-## Architecture
+## 🚀 Quick Start
 
-```
-AI Application/Assistant
-         ↓
-   MCP Server (Port 3000)
-         ↓
-   Backend Service (Port 3000) [API Key Validation]
-         ↓
-   API Service (Port 8000/8001) [Environment-based routing]
-         ↓
-   PostgreSQL Database
+### Installation
+
+```bash
+npm install -g @medikode/mcp-server
 ```
 
-### Environment-Based Routing
+### Configuration
 
-The MCP server automatically routes requests to the correct API service based on the API key's environment:
+#### Claude Desktop
 
-- **Production API Keys** → Routes to Production API Service (Port 8000)
-- **Sandbox API Keys** → Routes to Sandbox API Service (Port 8001)
+Add to your `claude_desktop_config.json`:
 
-This ensures that:
-- Production data stays in production
-- Sandbox testing doesn't affect production systems
-- Proper environment isolation and data security
+```json
+{
+  "mcpServers": {
+    "medikode": {
+      "command": "npx",
+      "args": ["-y", "@medikode/mcp-server"],
+      "env": {
+        "MEDIKODE_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
 
-### MCP Input Type Tracking
+#### Cursor IDE
 
-All MCP server calls are automatically tagged with `input_type: "MCP"` to distinguish them from regular API calls in listings and analytics:
+Add to your `cursor_settings.json`:
 
-- **Regular API Calls**: Direct calls to API service endpoints
-- **MCP Calls**: Calls routed through the MCP server (tagged as "MCP")
+```json
+{
+  "mcp": {
+    "servers": {
+      "medikode": {
+        "command": "npx",
+        "args": ["-y", "@medikode/mcp-server"],
+        "env": {
+          "MEDIKODE_API_KEY": "your_api_key_here"
+        }
+      }
+    }
+  }
+}
+```
 
-This allows for:
-- Separate analytics and reporting for MCP vs direct API usage
-- Filtering and searching by input type in admin dashboards
-- Better understanding of usage patterns across different access methods
+## 🛠 Available Tools
 
-## Features
+### 1. `validate_codes`
+Validates CPT/ICD-10 codes against clinical documentation.
 
-### MCP Tools
+**Inputs:**
+- `chart_text` (string, required): Provider note or chart excerpt
+- `codes` (array[string], required): CPT/ICD-10 codes to validate
 
-1. **process_chart**
-   - Processes patient chart text
-   - Returns ICD/CPT code suggestions
-   - Supports specialty-specific analysis
-   - Includes medical coding justification
+**Outputs:**
+- `valid` (boolean): Whether codes are valid for the chart
+- `recommendations` (array[string]): Missing or conflicting codes
 
-2. **validate_codes**
-   - Validates human-coded medical codes
-   - Compares against patient chart documentation
-   - Provides accuracy assessment
-   - Returns validation recommendations
+### 2. `qa_chart`
+Performs a coding quality assurance check.
 
-3. **calculate_raf**
-   - Calculates Risk Adjustment Factor scores
-   - Supports multiple RAF models (V28, V24, V22)
-   - Processes patient demographics and conditions
-   - Returns detailed RAF breakdown
+**Inputs:**
+- `chart_text` (string, required): Clinical documentation to review
 
-4. **qa_validate_codes**
-   - Performs comprehensive QA validation of coded medical input
-   - Provides denial risk assessment
-   - Returns optimization recommendations
-   - Identifies issues and recommended changes
+**Outputs:**
+- `issues_found` (array[string]): Documentation or coding gaps
+- `suggested_codes` (array[string]): Recommended additional codes
 
-5. **parse_eob**
-   - Parses and analyzes Explanation of Benefits (EOB) documents
-   - Extracts key information and financial details
-   - Identifies errors and warnings
-   - Provides structured analysis of EOB content
+### 3. `parse_eob`
+Extracts structured data from Explanation of Benefits (EOB) documents.
 
-### Security & Authentication
+**Inputs:**
+- `eob_content` (string, required): Raw EOB text (or PDF extracted text)
 
-- API key-based authentication via `x-api-key` header
-- Integration with existing Medikode API key system
-- Request validation and sanitization
-- Comprehensive usage logging
+**Outputs:**
+- `payer` (string): Insurance payer name
+- `claim_number` (string): Claim reference number
+- `total_billed` (number): Total amount billed
+- `total_allowed` (number): Total amount allowed by payer
+- `insurance_paid` (number): Amount paid by insurance
+- `patient_responsibility` (number): Patient out-of-pocket amount
 
-### Monitoring & Analytics
+### 4. `score_raf`
+Calculates RAF score and HCC capture from encounter documentation.
 
-- SQLite-based usage logging
-- Request/response tracking
-- Performance metrics
-- Error monitoring
-- Health check endpoints
+**Inputs:**
+- `chart_text` (string, required): Clinical encounter documentation
 
-## Quick Start
+**Outputs:**
+- `raf_score` (float): Risk Adjustment Factor score
+- `hcc_codes` (array[string]): Hierarchical Condition Category codes
+
+### 5. `multi_validate`
+Composite workflow that validates chart coding and calculates RAF in one step.
+
+**Inputs:**
+- `chart_text` (string, required): Clinical documentation
+- `codes` (array[string], optional): Optional codes to validate
+
+**Outputs:**
+- `validation_results` (object): Results from validate_codes
+- `raf_results` (object): Results from score_raf
+
+## 💡 Example Usage
+
+Once configured, you can use the tools in your AI assistant:
+
+```
+User: "Validate these codes for this chart: 99213, I10, E11.9"
+
+AI: I'll help you validate those codes using the validate_codes tool...
+[Tool call to validate_codes]
+
+Based on the validation results:
+- Code 99213: Valid for established patient office visit
+- Code I10: Valid for essential hypertension
+- Code E11.9: Valid for type 2 diabetes without complications
+```
+
+## 🔑 Authentication
+
+All tools require a valid Medikode API key. You can obtain one by:
+
+1. Signing up at [medikode.ai](https://medikode.ai)
+2. Generating an API key in your account settings
+3. Setting the `MEDIKODE_API_KEY` environment variable
+
+## 📊 Usage Tracking
+
+All MCP tool usage is tracked and appears in your Medikode dashboard alongside regular API calls. This includes:
+
+- Number of API calls made
+- Charts processed
+- EOBs parsed
+- RAF scores calculated
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**MCP Server Not Found**
+- Ensure Node.js and npm are installed
+- Verify the package is available via npx: `npx @medikode/mcp-server --help`
+
+**Authentication Errors**
+- Check that your API key is correct and active
+- Verify the `MEDIKODE_API_KEY` environment variable is set
+- Ensure your API key has the required permissions
+
+**Tool Not Available**
+- Restart your AI client after configuration changes
+- Verify the MCP server configuration is correct
+- Ensure your AI client supports MCP
+
+## 📚 Documentation
+
+- [Medikode Documentation](https://docs.medikode.ai)
+- [MCP Tools Guide](https://mcp.medikode.ai)
+- [API Reference](https://docs.medikode.ai/api)
+
+## 🛠 Development
 
 ### Prerequisites
 
-- Node.js 24+ 
-- Docker (optional)
-- Access to Medikode API service and backend service
+- Node.js 18.0.0 or higher
+- npm or yarn
+- Medikode API key
 
 ### Local Development
 
-1. **Install Dependencies**
+1. **Clone the repository:**
    ```bash
+   git clone https://github.com/medikode/mcp-server.git
    cd mcp-server
+   ```
+
+2. **Install dependencies:**
+   ```bash
    npm install
    ```
 
-2. **Environment Setup**
+3. **Set up environment variables:**
    ```bash
    cp env.example .env
-   # Edit .env with your configuration
+   # Edit .env with your API key
    ```
 
-3. **Git Setup (Optional)**
-   ```bash
-   # Initialize git repository
-   git init
-   
-   # The .gitignore file is already configured to exclude:
-   # - node_modules/, .env files, database files, logs
-   git add .
-   git commit -m "Initial MCP server setup"
-   ```
-
-4. **Start the Server**
+4. **Run in development mode:**
    ```bash
    npm run dev
    ```
 
-5. **Test the Server**
+5. **Test the MCP server:**
    ```bash
-   curl http://localhost:3000/health
+   npm run test:routing
    ```
 
-### Docker Deployment
-
-1. **Build and Run**
-   ```bash
-   docker build -t medikode-mcp-server .
-   docker run -p 3000:3000 --env-file .env medikode-mcp-server
-   ```
-
-2. **Docker Compose (Full Stack)**
-   ```bash
-   docker-compose up -d
-   ```
-
-## API Endpoints
-
-### Health Check
-- `GET /health` - Basic health check
-- `GET /health/detailed` - Detailed health with dependency checks
-
-### Capabilities
-- `GET /capabilities` - MCP server capabilities and tool schema
-- `GET /capabilities/openai-tools` - OpenAI-compatible tool definitions
-
-### MCP Tools
-- `POST /mcp/tools/process_chart` - Process patient chart
-- `POST /mcp/tools/validate_codes` - Validate medical codes
-- `POST /mcp/tools/calculate_raf` - Calculate RAF score
-- `POST /mcp/tools/qa_validate_codes` - QA validate coded input
-- `POST /mcp/tools/parse_eob` - Parse EOB documents
-- `GET /mcp/tools` - List available tools
-
-## Usage Examples
-
-### Process Chart
+### Building
 
 ```bash
-curl -X POST http://localhost:3000/mcp/tools/process_chart \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: YOUR_API_KEY" \
-  -d '{
-    "text": "Patient presents with chest pain and shortness of breath...",
-    "specialty": "Cardiology"
-  }'
+npm run build
 ```
-
-### Validate Codes
-
-```bash
-curl -X POST http://localhost:3000/mcp/tools/validate_codes \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: YOUR_API_KEY" \
-  -d '{
-    "patient_chart": "Patient chart text...",
-    "human_coded_output": "I10, E11.9, Z51.11"
-  }'
-```
-
-### Calculate RAF
-
-```bash
-curl -X POST http://localhost:3000/mcp/tools/calculate_raf \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: YOUR_API_KEY" \
-  -d '{
-    "demographics": "65-year-old male",
-    "illnesses": "Diabetes, Hypertension, COPD",
-    "model": "V28"
-  }'
-```
-
-### QA Validate Codes
-
-```bash
-curl -X POST http://localhost:3000/mcp/tools/qa_validate_codes \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: YOUR_API_KEY" \
-  -d '{
-    "coded_input": "99213, 99214, I10, E11.9, Z51.11"
-  }'
-```
-
-### Parse EOB
-
-```bash
-curl -X POST http://localhost:3000/mcp/tools/parse_eob \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: YOUR_API_KEY" \
-  -d '{
-    "content": "EOB document content here..."
-  }'
-```
-
-## OpenAI Integration
-
-The MCP server provides OpenAI-compatible tool definitions that can be used with OpenAI's function calling feature:
-
-```python
-import openai
-
-# Get tool definitions
-tools_response = requests.get('https://mcp.medikode.ai/capabilities/openai-tools')
-tools = tools_response.json()['tools']
-
-# Use with OpenAI
-response = openai.ChatCompletion.create(
-    model="gpt-4",
-    messages=[{"role": "user", "content": "Process this patient chart..."}],
-    tools=tools,
-    tool_choice="auto"
-)
-```
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORT` | Server port | `3000` |
-| `NODE_ENV` | Environment | `development` |
-| `API_SERVICE_URL` | API service URL | `http://localhost:3001` |
-| `BACKEND_SERVICE_URL` | Backend service URL | `http://localhost:3002` |
-| `SQLITE_DB_PATH` | SQLite database path | `/app/data/usage.db` |
-| `ALLOWED_ORIGINS` | CORS allowed origins | `*` |
-
-### API Key Setup
-
-The MCP server uses the same API key system as the main Medikode platform. API keys are validated against the backend service and must be included in the `x-api-key` header for all requests.
-
-## Deployment
-
-### Azure Container Apps
-
-The MCP server is integrated into the Azure deployment pipeline:
-
-1. **Build and Push**
-   ```bash
-   cd deploy
-   ./update-azure-container-apps.sh
-   ```
-
-2. **Access**
-   - Production: `https://mcp.medikode.ai`
-   - Health Check: `https://mcp.medikode.ai/health`
-
-### Manual Deployment
-
-1. **Build Docker Image**
-   ```bash
-   docker build -t medikodeacr.azurecr.io/mcp-server:latest .
-   docker push medikodeacr.azurecr.io/mcp-server:latest
-   ```
-
-2. **Deploy to Azure Container Apps**
-   ```bash
-   az containerapp update \
-     --name mcp-app \
-     --resource-group microservices-rg \
-     --image medikodeacr.azurecr.io/mcp-server:latest
-   ```
-
-## Monitoring
-
-### Usage Analytics
-
-The server logs all tool usage to SQLite with the following information:
-- Request/response data
-- Processing times
-- API key information
-- Error details
-- User agent and IP
-
-### Health Monitoring
-
-- Basic health: `GET /health`
-- Detailed health: `GET /health/detailed`
-- Dependency checks for API and backend services
-
-## Development
-
-### Project Structure
-
-```
-mcp-server/
-├── src/
-│   ├── middleware/
-│   │   └── auth.js          # API key validation
-│   ├── database/
-│   │   └── usageLogger.js   # SQLite usage logging
-│   └── routes/
-│       ├── health.js        # Health check endpoints
-│       ├── capabilities.js  # MCP capabilities
-│       └── mcp.js          # MCP tool implementations
-├── data/                    # SQLite database storage (auto-created)
-├── .gitignore              # Git ignore rules
-├── .env.example            # Environment template
-├── Dockerfile              # Docker containerization
-├── docker-compose.yml      # Local development setup
-├── package.json            # Node.js dependencies
-├── README.md               # Main documentation
-├── MCP_SETUP_GUIDE.md      # Detailed setup guide
-└── DEPLOYMENT_SUMMARY.md   # Deployment overview
-```
-
-### Adding New Tools
-
-1. **Define Tool Schema** in `src/routes/capabilities.js`
-2. **Implement Tool Logic** in `src/routes/mcp.js`
-3. **Add Validation** using Joi schemas
-4. **Update Documentation**
 
 ### Testing
 
 ```bash
-# Run tests
-npm test
+# Test WebSocket connection
+node test-websocket.js
 
-# Test with curl
-curl -X POST http://localhost:3000/mcp/tools/process_chart \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: test-key" \
-  -d '{"text": "test chart"}'
+# Test ChatGPT integration
+python test-chatgpt-integration.py
+
+# Test environment routing
+node test-environment-routing.js
 ```
 
-## Troubleshooting
+## 🤝 Contributing
 
-### Common Issues
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
-1. **API Key Validation Failed**
-   - Ensure backend service is running
-   - Check API key format and validity
-   - Verify network connectivity
+### Development Workflow
 
-2. **Tool Processing Errors**
-   - Check API service connectivity
-   - Validate request data format
-   - Review error logs for details
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
-3. **Database Issues**
-   - Ensure data directory exists
-   - Check SQLite permissions
-   - Verify disk space
+### Code Style
 
-### Logs
+- Use ESLint for JavaScript linting
+- Follow the existing code style
+- Add tests for new features
+- Update documentation as needed
 
-```bash
-# View container logs
-docker logs medikode-mcp-server
+## 🐛 Bug Reports
 
-# View Azure Container App logs
-az containerapp logs show --name mcp-app --resource-group microservices-rg
-```
+Found a bug? Please [open an issue](https://github.com/medikode/mcp-server/issues) with:
 
-## Support
+- Clear description of the problem
+- Steps to reproduce
+- Expected vs actual behavior
+- Environment details (Node.js version, OS, etc.)
 
-For issues and questions:
-- Check the health endpoints for service status
-- Review usage logs for request details
-- Contact the Medikode development team
+## 💡 Feature Requests
 
-## License
+Have an idea for a new feature? We'd love to hear it! Please [open an issue](https://github.com/medikode/mcp-server/issues) with:
 
-ISC License - See LICENSE file for details.
+- Clear description of the feature
+- Use case and benefits
+- Any implementation ideas you have
+
+## 📊 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a list of changes and version history.
+
+## 🤝 Support
+
+- **Issues**: [GitHub Issues](https://github.com/medikode/mcp-server/issues)
+- **Documentation**: [docs.medikode.ai](https://docs.medikode.ai)
+- **Email**: support@medikode.ai
+- **Discord**: [Join our community](https://discord.gg/medikode)
+
+## 📄 License
+
+ISC License - see [LICENSE](LICENSE) file for details.
+
+## 🔗 Links
+
+- [Website](https://medikode.ai)
+- [Documentation](https://docs.medikode.ai)
+- [MCP Tools](https://mcp.medikode.ai)
+- [GitHub](https://github.com/medikode/mcp-server)
+- [npm Package](https://www.npmjs.com/package/@medikode/mcp-server)
+
+## 🙏 Acknowledgments
+
+- Built with [Model Context Protocol](https://modelcontextprotocol.io/)
+- Powered by [Medikode](https://medikode.ai) medical coding platform
+- Thanks to all our contributors and users!
