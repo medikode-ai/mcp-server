@@ -12,7 +12,8 @@
     "dev": "nodemon --inspect=0.0.0.0:9229 index.js",
     "dev:debug": "nodemon --inspect-brk=0.0.0.0:9229 index.js",
     "debug": "node --inspect-brk index.js",
-    "debug:attach": "node --inspect index.js"
+    "debug:attach": "node --inspect index.js",
+    "test:routing": "node test-environment-routing.js"
   },
   "keywords": [
     "mcp",

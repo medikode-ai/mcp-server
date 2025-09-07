@@ -19,12 +19,36 @@ AI Application/Assistant
          ↓
    MCP Server (Port 3000)
          ↓
-   API Service (Port 3001)
+   Backend Service (Port 3000) [API Key Validation]
          ↓
-   Backend Service (Port 3002)
+   API Service (Port 8000/8001) [Environment-based routing]
          ↓
    PostgreSQL Database
 ```
+
+### Environment-Based Routing
+
+The MCP server automatically routes requests to the correct API service based on the API key's environment:
+
+- **Production API Keys** → Routes to Production API Service (Port 8000)
+- **Sandbox API Keys** → Routes to Sandbox API Service (Port 8001)
+
+This ensures that:
+- Production data stays in production
+- Sandbox testing doesn't affect production systems
+- Proper environment isolation and data security
+
+### MCP Input Type Tracking
+
+All MCP server calls are automatically tagged with `input_type: "MCP"` to distinguish them from regular API calls in listings and analytics:
+
+- **Regular API Calls**: Direct calls to API service endpoints
+- **MCP Calls**: Calls routed through the MCP server (tagged as "MCP")
+
+This allows for:
+- Separate analytics and reporting for MCP vs direct API usage
+- Filtering and searching by input type in admin dashboards
+- Better understanding of usage patterns across different access methods
 
 ## Features
 

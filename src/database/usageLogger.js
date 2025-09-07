@@ -1,201 +1,210 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const fs = require('fs');
-
-let db = null;
+const backendClient = require('./backendClient');
+const crypto = require('crypto');
 
 /**
- * Initialize SQLite database for usage logging
+ * MCP Usage Logger using Backend Service
+ * This replaces the SQLite implementation with calls to the backend-service
  */
-async function initializeDatabase() {
-    return new Promise((resolve, reject) => {
-        const dbPath = process.env.SQLITE_DB_PATH || path.join(__dirname, '../../data/usage.db');
-        
-        // Ensure data directory exists
-        const dataDir = path.dirname(dbPath);
-        if (!fs.existsSync(dataDir)) {
-            fs.mkdirSync(dataDir, { recursive: true });
+class MCPUsageLogger {
+    constructor() {
+        this.backendClient = backendClient;
+    }
+
+    /**
+     * Initialize the usage logger (no-op for backend service)
+     */
+    async initializeDatabase() {
+        console.log('MCP Usage Logger initialized with backend-service integration');
+        return Promise.resolve();
+    }
+
+    /**
+     * Log MCP usage to backend-service database
+     */
+    async logUsage(logData) {
+        try {
+            const timestamp = new Date().toISOString();
+            const {
+                requestId,
+                apiKeyId,
+                toolName,
+                requestData,
+                responseData,
+                statusCode,
+                processingTimeMs,
+                errorMessage,
+                userAgent,
+                ipAddress
+            } = logData;
+            
+            console.log(`[${timestamp}] Logging MCP usage for tool: ${toolName}, API key: ${apiKeyId}`);
+            
+            // Calculate request hash
+            const requestString = JSON.stringify(requestData);
+            const requestHash = crypto.createHash('sha256').update(requestString).digest('hex');
+            
+            // Prepare metadata
+            const metadata = {
+                tool_name: toolName,
+                call_id: requestId,
+                api_time_ms: processingTimeMs,
+                input_length: this.calculateInputLength(requestData),
+                output_length: this.calculateOutputLength(responseData),
+                status_code: statusCode,
+                error_message: errorMessage,
+                user_agent: userAgent,
+                ip_address: ipAddress,
+                input_type: 'MCP'  // Distinguish MCP calls from regular API calls
+            };
+            
+            // Store in backend-service
+            const result = await this.backendClient.storeMcpCall(
+                requestData,
+                responseData,
+                apiKeyId,
+                requestHash,
+                metadata,
+                false // not cached
+            );
+            
+            console.log(`[${timestamp}] MCP usage logged successfully with ID: ${result.id}`);
+            return result.id;
+            
+        } catch (error) {
+            console.error('Error logging MCP usage:', error);
+            // Don't throw error to avoid breaking the main flow
+            return null;
         }
+    }
 
-        db = new sqlite3.Database(dbPath, (err) => {
-            if (err) {
-                console.error('Error opening database:', err);
-                reject(err);
-                return;
-            }
-            console.log('Connected to SQLite database');
-            createTables().then(resolve).catch(reject);
-        });
-    });
-}
-
-/**
- * Create necessary tables for usage logging
- */
-async function createTables() {
-    return new Promise((resolve, reject) => {
-        const createUsageTable = `
-            CREATE TABLE IF NOT EXISTS mcp_usage_logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                request_id TEXT UNIQUE NOT NULL,
-                api_key_id TEXT NOT NULL,
-                tool_name TEXT NOT NULL,
-                request_data TEXT NOT NULL,
-                response_data TEXT,
-                status_code INTEGER,
-                processing_time_ms INTEGER,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                error_message TEXT,
-                user_agent TEXT,
-                ip_address TEXT
-            )
-        `;
-
-        const createIndexes = [
-            'CREATE INDEX IF NOT EXISTS idx_mcp_usage_api_key ON mcp_usage_logs(api_key_id)',
-            'CREATE INDEX IF NOT EXISTS idx_mcp_usage_tool ON mcp_usage_logs(tool_name)',
-            'CREATE INDEX IF NOT EXISTS idx_mcp_usage_timestamp ON mcp_usage_logs(timestamp)',
-            'CREATE INDEX IF NOT EXISTS idx_mcp_usage_request_id ON mcp_usage_logs(request_id)'
-        ];
-
-        db.run(createUsageTable, (err) => {
-            if (err) {
-                console.error('Error creating usage table:', err);
-                reject(err);
-                return;
-            }
-
-            // Create indexes
-            let completed = 0;
-            const total = createIndexes.length;
-
-            createIndexes.forEach((indexSql) => {
-                db.run(indexSql, (err) => {
-                    if (err) {
-                        console.error('Error creating index:', err);
-                        reject(err);
-                        return;
-                    }
-                    completed++;
-                    if (completed === total) {
-                        console.log('Database tables and indexes created successfully');
-                        resolve();
-                    }
-                });
-            });
-        });
-    });
-}
-
-/**
- * Log MCP tool usage
- */
-async function logUsage(logData) {
-    return new Promise((resolve, reject) => {
-        const {
-            requestId,
-            apiKeyId,
-            toolName,
-            requestData,
-            responseData,
-            statusCode,
-            processingTimeMs,
-            errorMessage,
-            userAgent,
-            ipAddress
-        } = logData;
-
-        const sql = `
-            INSERT INTO mcp_usage_logs (
-                request_id, api_key_id, tool_name, request_data, response_data,
-                status_code, processing_time_ms, error_message, user_agent, ip_address
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-
-        const params = [
-            requestId,
-            apiKeyId,
-            toolName,
-            JSON.stringify(requestData),
-            responseData ? JSON.stringify(responseData) : null,
-            statusCode,
-            processingTimeMs,
-            errorMessage,
-            userAgent,
-            ipAddress
-        ];
-
-        db.run(sql, params, function(err) {
-            if (err) {
-                console.error('Error logging usage:', err);
-                reject(err);
+    /**
+     * Check cache for MCP call
+     */
+    async checkCache(requestData, requestHash, environment = 'sandbox') {
+        try {
+            const timestamp = new Date().toISOString();
+            console.log(`[${timestamp}] Checking MCP cache for hash: ${requestHash}`);
+            
+            const cachedResult = await this.backendClient.checkMcpCache(
+                requestData,
+                requestHash,
+                environment
+            );
+            
+            if (cachedResult) {
+                console.log(`[${timestamp}] Found cached MCP result from ${cachedResult.created_at}`);
+                return cachedResult;
             } else {
-                console.log(`Usage logged for request ${requestId}`);
-                resolve(this.lastID);
+                console.log(`[${timestamp}] No cached MCP result found`);
+                return null;
             }
-        });
-    });
-}
-
-/**
- * Get usage statistics
- */
-async function getUsageStats(apiKeyId, startDate, endDate) {
-    return new Promise((resolve, reject) => {
-        let sql = `
-            SELECT 
-                tool_name,
-                COUNT(*) as total_requests,
-                AVG(processing_time_ms) as avg_processing_time,
-                COUNT(CASE WHEN status_code >= 200 AND status_code < 300 THEN 1 END) as successful_requests,
-                COUNT(CASE WHEN status_code >= 400 THEN 1 END) as failed_requests
-            FROM mcp_usage_logs 
-            WHERE api_key_id = ?
-        `;
-        
-        const params = [apiKeyId];
-
-        if (startDate) {
-            sql += ' AND timestamp >= ?';
-            params.push(startDate);
+            
+        } catch (error) {
+            console.error('Error checking MCP cache:', error);
+            return null; // Return null on error to allow processing to continue
         }
+    }
 
-        if (endDate) {
-            sql += ' AND timestamp <= ?';
-            params.push(endDate);
+    /**
+     * Get usage statistics
+     */
+    async getUsageStats(apiKeyId, startDate = null, endDate = null, environment = 'sandbox') {
+        try {
+            const timestamp = new Date().toISOString();
+            console.log(`[${timestamp}] Getting MCP usage stats for API key: ${apiKeyId}`);
+            
+            const stats = await this.backendClient.getMcpStats(
+                apiKeyId,
+                startDate,
+                endDate,
+                environment
+            );
+            
+            console.log(`[${timestamp}] Retrieved MCP usage stats`);
+            return stats;
+            
+        } catch (error) {
+            console.error('Error getting MCP usage stats:', error);
+            throw error;
         }
+    }
 
-        sql += ' GROUP BY tool_name ORDER BY total_requests DESC';
+    /**
+     * Get usage history
+     */
+    async getUsageHistory(userId, limit = 100, offset = 0, environment = 'sandbox', inputType = null) {
+        try {
+            const timestamp = new Date().toISOString();
+            console.log(`[${timestamp}] Getting MCP usage history for user: ${userId}`);
+            
+            const history = await this.backendClient.getMcpCallHistory(
+                userId,
+                limit,
+                offset,
+                environment,
+                inputType
+            );
+            
+            console.log(`[${timestamp}] Retrieved MCP usage history`);
+            return history;
+            
+        } catch (error) {
+            console.error('Error getting MCP usage history:', error);
+            throw error;
+        }
+    }
 
-        db.all(sql, params, (err, rows) => {
-            if (err) {
-                console.error('Error getting usage stats:', err);
-                reject(err);
-            } else {
-                resolve(rows);
+    /**
+     * Calculate input length for metadata
+     */
+    calculateInputLength(requestData) {
+        try {
+            if (typeof requestData === 'string') {
+                return requestData.length;
+            } else if (typeof requestData === 'object') {
+                return JSON.stringify(requestData).length;
             }
-        });
-    });
-}
+            return 0;
+        } catch (error) {
+            return 0;
+        }
+    }
 
-/**
- * Close database connection
- */
-function closeDatabase() {
-    if (db) {
-        db.close((err) => {
-            if (err) {
-                console.error('Error closing database:', err);
-            } else {
-                console.log('Database connection closed');
+    /**
+     * Calculate output length for metadata
+     */
+    calculateOutputLength(responseData) {
+        try {
+            if (typeof responseData === 'string') {
+                return responseData.length;
+            } else if (typeof responseData === 'object') {
+                return JSON.stringify(responseData).length;
             }
-        });
+            return 0;
+        } catch (error) {
+            return 0;
+        }
+    }
+
+    /**
+     * Close database connection (no-op for backend service)
+     */
+    closeDatabase() {
+        console.log('MCP Usage Logger closed (backend-service integration)');
     }
 }
 
+// Create singleton instance
+const usageLogger = new MCPUsageLogger();
+
 module.exports = {
-    initializeDatabase,
-    logUsage,
-    getUsageStats,
-    closeDatabase
+    initializeDatabase: () => usageLogger.initializeDatabase(),
+    logUsage: (logData) => usageLogger.logUsage(logData),
+    checkCache: (requestData, requestHash, environment) => 
+        usageLogger.checkCache(requestData, requestHash, environment),
+    getUsageStats: (apiKeyId, startDate, endDate, environment) => 
+        usageLogger.getUsageStats(apiKeyId, startDate, endDate, environment),
+    getUsageHistory: (userId, limit, offset, environment) => 
+        usageLogger.getUsageHistory(userId, limit, offset, environment),
+    closeDatabase: () => usageLogger.closeDatabase()
 };

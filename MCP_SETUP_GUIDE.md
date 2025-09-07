@@ -121,6 +121,22 @@ npm run dev
 
 # Production mode
 npm start
+
+# Test the server is running
+curl http://localhost:3000/health
+```
+
+**Expected Output:**
+```json
+{
+  "status": "healthy",
+  "service": "medikode-mcp-server",
+  "version": "1.0.0",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "uptime": 5.791688375,
+  "memory": {...},
+  "environment": "production"
+}
 ```
 
 ### 6. Verify Installation
@@ -129,9 +145,21 @@ npm start
 # Test health endpoint
 curl http://localhost:3000/health
 
-# Test capabilities endpoint
+# Test capabilities endpoint (should work without API key)
 curl http://localhost:3000/capabilities
+
+# Test root endpoint
+curl http://localhost:3000/
+
+# Test MCP tools endpoint (requires API key)
+curl -H "x-api-key: YOUR_API_KEY" http://localhost:3000/mcp/tools
 ```
+
+**Expected Results:**
+- Health endpoint: Returns server status and memory usage
+- Capabilities endpoint: Returns available MCP tools and schemas
+- Root endpoint: Returns basic service information
+- MCP tools endpoint: Returns list of available tools (with valid API key)
 
 ## Using with AI Applications
 
@@ -402,11 +430,23 @@ Access the production MCP server at: `https://mcp.medikode.ai`
    - Ensure `data/` directory exists and is writable
    - Check SQLite file permissions
    - Verify disk space availability
+   - **Fix**: Make sure `SQLITE_DB_PATH` in `.env` uses relative path `./data/usage.db` for local development
 
 5. **Environment Configuration**
    - Ensure `.env` file exists and is properly configured
    - Check that all required environment variables are set
    - Verify API service URLs are accessible
+   - **Fix**: Copy `env.example` to `.env` and update paths for local development
+
+6. **Path-to-Regexp Errors**
+   - **Error**: `Missing parameter name at index 1: *`
+   - **Cause**: Invalid route pattern in Express.js
+   - **Fix**: Use proper route patterns (already fixed in the code)
+
+7. **Authentication Issues**
+   - **Error**: "API key required" for capabilities endpoint
+   - **Cause**: Capabilities endpoint should be public for MCP discovery
+   - **Fix**: Capabilities and root endpoints are now accessible without authentication
 
 ### Debug Mode
 

@@ -15,8 +15,10 @@ const PORT = process.env.PORT || 3000;
 // Security middleware
 app.use(helmet());
 app.use(cors({
-    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
-    credentials: true
+    origin: true, // Allow all origins
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key']
 }));
 
 // Body parsing middleware
@@ -33,16 +35,10 @@ app.use((req, res, next) => {
 // Health check endpoint (no auth required)
 app.use('/health', healthRoutes);
 
-// API key validation for all other routes
-app.use(validateApiKey);
-
-// MCP routes
-app.use('/mcp', mcpRoutes);
-
-// Capabilities endpoint
+// Capabilities endpoint (no auth required - needed for MCP discovery)
 app.use('/capabilities', capabilitiesRoutes);
 
-// Root endpoint
+// Root endpoint (no auth required - basic service info)
 app.get('/', (req, res) => {
     res.json({
         service: 'medikode-mcp-server',
@@ -56,6 +52,12 @@ app.get('/', (req, res) => {
         timestamp: new Date().toISOString()
     });
 });
+
+// API key validation for all other routes
+app.use(validateApiKey);
+
+// MCP routes
+app.use('/mcp', mcpRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

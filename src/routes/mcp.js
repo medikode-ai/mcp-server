@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const fetch = require('node-fetch');
 const { v4: uuidv4 } = require('uuid');
 const Joi = require('joi');
 const { logUsage } = require('../database/usageLogger');
+const apiServiceRouter = require('../services/apiServiceRouter');
 
 // Validation schemas
 const processChartSchema = Joi.object({
@@ -50,27 +50,40 @@ const parseEobSchema = Joi.object({
 });
 
 /**
- * Helper function to make API calls to the api-service
+ * Helper function to make API calls to the api-service based on environment
  */
-async function callApiService(endpoint, data, apiKey) {
-    const apiServiceUrl = process.env.API_SERVICE_URL || 'http://localhost:3001';
-    const url = `${apiServiceUrl}${endpoint}`;
-    
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey
-        },
-        body: JSON.stringify(data)
-    });
-
-    const responseData = await response.json();
-    
-    return {
-        status: response.status,
-        data: responseData
-    };
+async function callApiService(endpoint, data, apiKey, environment) {
+    try {
+        let responseData;
+        
+        switch (endpoint) {
+            case '/assistant':
+                responseData = await apiServiceRouter.processChart(environment, data, apiKey);
+                break;
+            case '/validator':
+                responseData = await apiServiceRouter.validateCodes(environment, data, apiKey);
+                break;
+            case '/rafscore':
+                responseData = await apiServiceRouter.calculateRaf(environment, data, apiKey);
+                break;
+            case '/qavalidator':
+                responseData = await apiServiceRouter.qaValidateCodes(environment, data, apiKey);
+                break;
+            case '/eobparser':
+                responseData = await apiServiceRouter.parseEob(environment, data, apiKey);
+                break;
+            default:
+                throw new Error(`Unknown endpoint: ${endpoint}`);
+        }
+        
+        return {
+            status: 200,
+            data: responseData
+        };
+    } catch (error) {
+        console.error(`Error calling API service for ${endpoint}:`, error);
+        throw error;
+    }
 }
 
 /**
@@ -121,8 +134,11 @@ router.post('/tools/process_chart', async (req, res) => {
             });
         }
 
+        // Get environment from API key data
+        const environment = req.apiKeyData?.environment || 'sandbox';
+        
         // Call api-service
-        const apiResponse = await callApiService('/assistant', value, req.headers['x-api-key']);
+        const apiResponse = await callApiService('/assistant', value, req.headers['x-api-key'], environment);
         
         const processingTime = Date.now() - startTime;
         
@@ -183,8 +199,11 @@ router.post('/tools/validate_codes', async (req, res) => {
             });
         }
 
+        // Get environment from API key data
+        const environment = req.apiKeyData?.environment || 'sandbox';
+        
         // Call api-service
-        const apiResponse = await callApiService('/validator', value, req.headers['x-api-key']);
+        const apiResponse = await callApiService('/validator', value, req.headers['x-api-key'], environment);
         
         const processingTime = Date.now() - startTime;
         
@@ -245,8 +264,11 @@ router.post('/tools/calculate_raf', async (req, res) => {
             });
         }
 
+        // Get environment from API key data
+        const environment = req.apiKeyData?.environment || 'sandbox';
+        
         // Call api-service
-        const apiResponse = await callApiService('/rafscore', value, req.headers['x-api-key']);
+        const apiResponse = await callApiService('/rafscore', value, req.headers['x-api-key'], environment);
         
         const processingTime = Date.now() - startTime;
         
@@ -307,8 +329,11 @@ router.post('/tools/qa_validate_codes', async (req, res) => {
             });
         }
 
+        // Get environment from API key data
+        const environment = req.apiKeyData?.environment || 'sandbox';
+        
         // Call api-service
-        const apiResponse = await callApiService('/qavalidator', value, req.headers['x-api-key']);
+        const apiResponse = await callApiService('/qavalidator', value, req.headers['x-api-key'], environment);
         
         const processingTime = Date.now() - startTime;
         
@@ -369,8 +394,11 @@ router.post('/tools/parse_eob', async (req, res) => {
             });
         }
 
+        // Get environment from API key data
+        const environment = req.apiKeyData?.environment || 'sandbox';
+        
         // Call api-service
-        const apiResponse = await callApiService('/eobparser', value, req.headers['x-api-key']);
+        const apiResponse = await callApiService('/eobparser', value, req.headers['x-api-key'], environment);
         
         const processingTime = Date.now() - startTime;
         
@@ -403,6 +431,93 @@ router.post('/tools/parse_eob', async (req, res) => {
             request_id: requestId
         });
     }
+});
+
+/**
+ * Root MCP endpoint - required for Cursor MCP integration
+ */
+router.get('/', (req, res) => {
+    res.json({
+        protocol: 'mcp',
+        version: '1.0.0',
+        capabilities: {
+            tools: true,
+            resources: false,
+            prompts: false
+        },
+        serverInfo: {
+            name: 'medikode-mcp-server',
+            version: '1.0.0'
+        },
+        tools: [
+            {
+                name: 'process_chart',
+                description: 'Process patient chart text and return ICD/CPT code suggestions',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        text: { type: 'string', description: 'Patient chart text' },
+                        specialty: { type: 'string', enum: ['Cardiology', 'Physical Therapy', 'Internal Medicine', 'Urology', 'Family Medicine', 'Neurology'] },
+                        taxonomy_code: { type: 'string', description: 'Taxonomy code' },
+                        insurance: { type: 'string', description: 'Insurance provider' }
+                    },
+                    required: ['text']
+                }
+            },
+            {
+                name: 'validate_codes',
+                description: 'Validate medical codes against patient chart',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        patient_chart: { type: 'string', description: 'Patient chart text' },
+                        human_coded_output: { type: 'string', description: 'Human coded medical codes' },
+                        specialty: { type: 'string', enum: ['Cardiology', 'Physical Therapy', 'Internal Medicine', 'Urology', 'Family Medicine', 'Neurology'] },
+                        taxonomy_code: { type: 'string', description: 'Taxonomy code' },
+                        insurance: { type: 'string', description: 'Insurance provider' }
+                    },
+                    required: ['patient_chart', 'human_coded_output']
+                }
+            },
+            {
+                name: 'calculate_raf',
+                description: 'Calculate Risk Adjustment Factor (RAF) score',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        demographics: { type: 'string', description: 'Patient demographics' },
+                        illnesses: { type: 'string', description: 'Patient illnesses and conditions' },
+                        model: { type: 'string', enum: ['V28', 'V24', 'V22'], default: 'V28' }
+                    },
+                    required: ['demographics', 'illnesses']
+                }
+            },
+            {
+                name: 'qa_validate_codes',
+                description: 'Perform comprehensive QA validation of coded medical input',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        coded_input: { type: 'string', description: 'Coded medical input to validate' }
+                    },
+                    required: ['coded_input']
+                }
+            },
+            {
+                name: 'parse_eob',
+                description: 'Parse and analyze Explanation of Benefits (EOB) documents',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        content: { type: 'string', description: 'EOB document content' }
+                    },
+                    required: ['content']
+                }
+            }
+        ],
+        timestamp: new Date().toISOString(),
+        service: 'medikode-mcp-server'
+    });
 });
 
 /**
