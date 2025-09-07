@@ -33,7 +33,7 @@ router.get('/detailed', async (req, res) => {
 
     // Check API service connectivity
     try {
-        const fetch = require('node-fetch');
+        // Using built-in fetch (Node.js 24.7.0+)
         const apiServiceUrl = process.env.API_SERVICE_URL || 'http://localhost:3001';
         const response = await fetch(`${apiServiceUrl}/health`, { 
             method: 'GET',
@@ -55,7 +55,7 @@ router.get('/detailed', async (req, res) => {
 
     // Check backend service connectivity
     try {
-        const fetch = require('node-fetch');
+        // Using built-in fetch (Node.js 24.7.0+)
         const backendServiceUrl = process.env.BACKEND_SERVICE_URL || 'http://localhost:3002';
         const response = await fetch(`${backendServiceUrl}/health`, { 
             method: 'GET',

@@ -5,7 +5,7 @@
  * This script tests the MCP server capabilities and tools directly
  */
 
-const fetch = require('node-fetch');
+// Using built-in fetch (Node.js 24.7.0+)
 
 // Configuration
 const MCP_SERVER_URL = 'http://localhost:3000';

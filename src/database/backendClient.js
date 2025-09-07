@@ -1,16 +1,5 @@
-// Use built-in fetch for Node.js 18+ or fallback to node-fetch
-let fetch;
-try {
-    // Try to use built-in fetch first
-    fetch = globalThis.fetch;
-    if (!fetch) {
-        // Fallback to node-fetch for older Node.js versions
-        fetch = require('node-fetch');
-    }
-} catch (error) {
-    // If built-in fetch is not available, use node-fetch
-    fetch = require('node-fetch');
-}
+// Using built-in fetch (Node.js 24.7.0+)
+const fetch = globalThis.fetch;
 
 /**
  * Client for communicating with backend-service for MCP call logging

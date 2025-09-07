@@ -6,7 +6,7 @@
  * based on the API key's environment (prod vs sandbox)
  */
 
-const fetch = require('node-fetch');
+// Using built-in fetch (Node.js 18+)
 
 // Configuration
 const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'http://localhost:3001';

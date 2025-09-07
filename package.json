@@ -1,6 +1,6 @@
 {
   "name": "@medikode/mcp-server",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Model Context Protocol (MCP) server for Medikode healthcare SaaS platform",
   "main": "mcp-server-stdio.js",
   "bin": {
@@ -8,7 +8,7 @@
   },
   "type": "commonjs",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=24.7.0"
   },
   "repository": {
     "type": "git",
@@ -48,7 +48,6 @@
     "express": "^5.1.0",
     "helmet": "^8.1.0",
     "joi": "^18.0.1",
-    "node-fetch": "^2.7.0",
     "uuid": "^12.0.0",
     "ws": "^8.18.3"
   },
