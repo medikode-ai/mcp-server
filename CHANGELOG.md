@@ -19,11 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.1] - 2024-09-07
 
 ### Added
-- Initial public release of @medikode/mcp-server
-- 5 MCP tools: validate_codes, qa_chart, parse_eob, score_raf, multi_validate
-- Support for Claude Desktop, Cursor, and other MCP-compatible clients
-- Comprehensive documentation and setup guides
-- npm package with npx support
+- Public npm package availability
+- Enhanced documentation and examples
+- GitHub Actions for automated testing and publishing
 
 ### Security
 - Removed hardcoded API keys and sensitive information
@@ -31,6 +29,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Secure API key validation
 
 ## [1.2.0] - 2024-09-07
+
+### Added
+- Initial public release of @medikode/mcp-server
+- 5 MCP tools: validate_codes, qa_chart, parse_eob, score_raf, multi_validate
+- Support for Claude Desktop, Cursor, and other MCP-compatible clients
+- Comprehensive documentation and setup guides
+- npm package with npx support
+
+### Security
+- Environment variable-based API key configuration
+- Removed hardcoded API keys and sensitive information
+
+### Performance
+- Optimized package size and dependencies
+
+## [1.1.0] - 2024-09-06
 
 ### Added
 - MCP server implementation with stdio transport
@@ -44,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved error handling and logging
 - Enhanced API service integration
 
-## [1.1.0] - 2024-09-06
+## [1.0.0] - 2024-09-05
 
 ### Added
 - Initial MCP server implementation
@@ -55,13 +69,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated dependencies and security patches
 - Improved performance and reliability
 
-## [1.0.0] - 2024-09-05
-
-### Added
-- Initial release
-- Basic MCP server functionality
-- Core medical coding tools
-- Documentation and examples
 
 ---
 
