@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const http = require('http');
+const WebSocket = require('ws');
 require('dotenv').config();
 
 const { validateApiKey } = require('./src/middleware/auth');
@@ -8,8 +10,10 @@ const { initializeDatabase } = require('./src/database/usageLogger');
 const mcpRoutes = require('./src/routes/mcp');
 const capabilitiesRoutes = require('./src/routes/capabilities');
 const healthRoutes = require('./src/routes/health');
+const { createWebSocketHandler } = require('./src/websocket/mcpWebSocket');
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
 // Security middleware
@@ -86,10 +90,24 @@ async function startServer() {
         await initializeDatabase();
         console.log('Database initialized successfully');
         
-        app.listen(PORT, '0.0.0.0', () => {
+        // Create WebSocket server
+        const wss = new WebSocket.Server({ 
+            server,
+            path: '/mcp',
+            verifyClient: (info) => {
+                // Allow all connections for now - authentication will be handled in the WebSocket handler
+                return true;
+            }
+        });
+        
+        // Set up WebSocket handler
+        createWebSocketHandler(wss);
+        
+        server.listen(PORT, '0.0.0.0', () => {
             console.log(`Medikode MCP Server running on port ${PORT}`);
             console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
             console.log(`API Service URL: ${process.env.API_SERVICE_URL || 'http://localhost:3001'}`);
+            console.log(`WebSocket MCP endpoint: ws://localhost:${PORT}/mcp`);
         });
     } catch (error) {
         console.error('Failed to start server:', error);

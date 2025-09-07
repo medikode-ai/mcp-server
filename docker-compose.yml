@@ -10,10 +10,7 @@ services:
       - PORT=3000
       - API_SERVICE_URL=http://api-service:3000
       - BACKEND_SERVICE_URL=http://backend-service:3000
-      - SQLITE_DB_PATH=/app/data/usage.db
       - ALLOWED_ORIGINS=*
-    volumes:
-      - ./data:/app/data
     depends_on:
       - api-service
       - backend-service

@@ -8,8 +8,7 @@ WORKDIR /app
 RUN apk add --no-cache \
     python3 \
     make \
-    g++ \
-    sqlite
+    g++
 
 # Copy package files
 COPY package*.json ./
@@ -20,8 +19,8 @@ RUN npm ci --only=production
 # Copy source code
 COPY . .
 
-# Create data directory for SQLite
-RUN mkdir -p /app/data
+# Create app directory
+RUN mkdir -p /app
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
