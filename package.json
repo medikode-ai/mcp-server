@@ -24,6 +24,7 @@
     "dev:debug": "nodemon --inspect-brk=0.0.0.0:9229 index.js",
     "debug": "node --inspect-brk index.js",
     "debug:attach": "node --inspect index.js",
+    "test": "node test-unit.js",
     "test:routing": "node test-environment-routing.js",
     "prepublishOnly": "echo 'Preparing to publish @medikode/mcp-server...'",
     "prepack": "echo 'Preparing package for distribution...'"
@@ -47,7 +48,7 @@
     "express": "^5.1.0",
     "helmet": "^8.1.0",
     "joi": "^18.0.1",
-    "node-fetch": "^3.3.2",
+    "node-fetch": "^2.7.0",
     "uuid": "^12.0.0",
     "ws": "^8.18.3"
   },
