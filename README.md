@@ -2,10 +2,14 @@
 
 [![npm version](https://badge.fury.io/js/%40medikode%2Fmcp-server.svg)](https://badge.fury.io/js/%40medikode%2Fmcp-server)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
-[![GitHub stars](https://img.shields.io/github/stars/medikode/mcp-server.svg)](https://github.com/medikode/mcp-server/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/medikode/mcp-server.svg)](https://github.com/medikode/mcp-server/issues)
+[![GitHub stars](https://img.shields.io/github/stars/medikode/mcp-server.svg)](https://github.com/medikode-ai/mcp-server/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/medikode/mcp-server.svg)](https://github.com/medikode-ai/mcp-server/issues)
 
 Model Context Protocol (MCP) server for Medikode's AI-driven medical coding platform. This package enables AI assistants like Claude Desktop, Cursor, and ChatGPT to access Medikode's medical coding tools directly.
+
+![Medikode Dashboard - API Usage Trends](medikode-dashboard.png)
+
+*Medikode's AI-driven medical coding platform dashboard showing API usage trends and analytics*
 
 ## 🌟 Features
 
