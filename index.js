@@ -51,9 +51,55 @@ app.get('/', (req, res) => {
         endpoints: {
             health: '/health',
             capabilities: '/capabilities',
-            mcp: '/mcp'
+            mcp: '/mcp',
+            mcpJson: '/mcp.json'
         },
         timestamp: new Date().toISOString()
+    });
+});
+
+// MCP JSON endpoint (no auth required - for MCP discovery)
+app.get('/mcp.json', (req, res) => {
+    res.json({
+        "name": "Medikode MCP Server",
+        "version": "1.0.0",
+        "description": "AI-powered medical coding via Assistant, Validator, and Parser APIs.",
+        "tools": [
+            {
+                "name": "assistant",
+                "description": "Interactive coding assistant for CPT/ICD queries.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "chart": { "type": "string", "description": "Patient chart text" }
+                    },
+                    "required": ["chart"]
+                }
+            },
+            {
+                "name": "validator",
+                "description": "Validates CPT/ICD codes against chart notes.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "chart": { "type": "string", "description": "Patient chart text" },
+                        "codes": { "type": "array", "items": { "type": "string" }, "description": "List of CPT/ICD codes" }
+                    },
+                    "required": ["chart", "codes"]
+                }
+            },
+            {
+                "name": "parser",
+                "description": "Parses EOB (Explanation of Benefits) documents into structured JSON.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "document": { "type": "string", "description": "EOB PDF or text" }
+                    },
+                    "required": ["document"]
+                }
+            }
+        ]
     });
 });
 
