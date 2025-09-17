@@ -1,6 +1,7 @@
 const { validateApiKey } = require('../middleware/auth');
 const apiServiceRouter = require('../services/apiServiceRouter');
 const { logUsage } = require('../database/usageLogger');
+const { getVersion } = require('../utils/version');
 
 /**
  * Create WebSocket handler for MCP protocol
@@ -67,7 +68,7 @@ function createWebSocketHandler(wss) {
                 },
                 serverInfo: {
                     name: 'medikode-mcp-server',
-                    version: '1.0.0'
+                    version: getVersion()
                 }
             }
         }));
@@ -167,7 +168,7 @@ function handleInitialize(id, params) {
             },
             serverInfo: {
                 name: 'medikode-mcp-server',
-                version: '1.0.0'
+                version: getVersion()
             }
         }
     };

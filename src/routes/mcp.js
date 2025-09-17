@@ -3,6 +3,7 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const Joi = require('joi');
 const { logUsage } = require('../database/usageLogger');
+const { getVersion } = require('../utils/version');
 const apiServiceRouter = require('../services/apiServiceRouter');
 
 // Validation schemas
@@ -447,7 +448,7 @@ router.get('/', (req, res) => {
         },
         serverInfo: {
             name: 'medikode-mcp-server',
-            version: '1.0.0'
+            version: getVersion()
         },
         tools: [
             {

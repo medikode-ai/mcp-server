@@ -1,4 +1,5 @@
 const express = require('express');
+const { getVersion } = require('../utils/version');
 const router = express.Router();
 
 /**
@@ -8,7 +9,7 @@ router.get('/', (req, res) => {
     res.json({
         status: 'healthy',
         service: 'medikode-mcp-server',
-        version: '1.0.0',
+        version: getVersion(),
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         memory: process.memoryUsage(),
@@ -23,7 +24,7 @@ router.get('/detailed', async (req, res) => {
     const health = {
         status: 'healthy',
         service: 'medikode-mcp-server',
-        version: '1.0.0',
+        version: getVersion(),
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         memory: process.memoryUsage(),

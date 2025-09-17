@@ -4,6 +4,7 @@ const { spawn } = require('child_process');
 const { validateApiKeyData } = require('./src/websocket/mcpWebSocket');
 const apiServiceRouter = require('./src/services/apiServiceRouter');
 const { logUsage } = require('./src/database/usageLogger');
+const { getVersion } = require('./src/utils/version');
 
 // MCP Server implementation using stdio transport
 class MCPServer {
@@ -93,7 +94,7 @@ class MCPServer {
                 },
                 serverInfo: {
                     name: 'medikode-mcp-server',
-                    version: '1.0.0'
+                    version: getVersion()
                 }
             }
         };

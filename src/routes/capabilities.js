@@ -1,4 +1,5 @@
 const express = require('express');
+const { getVersion } = require('../utils/version');
 const router = express.Router();
 
 /**
@@ -8,7 +9,7 @@ router.get('/', (req, res) => {
     const capabilities = {
         server: {
             name: 'medikode-mcp-server',
-            version: '1.0.0',
+            version: getVersion(),
             description: 'Model Context Protocol server for Medikode healthcare SaaS platform'
         },
         tools: [
@@ -294,7 +295,7 @@ router.get('/openai-tools', (req, res) => {
         tools: openaiTools,
         server: {
             name: 'medikode-mcp-server',
-            version: '1.0.0',
+            version: getVersion(),
             description: 'Model Context Protocol server for Medikode healthcare SaaS platform'
         }
     });
