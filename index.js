@@ -109,6 +109,23 @@ app.get('/mcp.json', (req, res) => {
 });
 
 // MCP Inspector HTTP endpoint (no auth required for initial connection)
+app.get('/mcp/inspect', (req, res) => {
+    res.json({
+        message: 'MCP Inspector endpoint. Send POST JSON-RPC 2.0 requests to this URL.',
+        usage: {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            exampleBody: {
+                jsonrpc: '2.0',
+                id: 1,
+                method: 'initialize',
+                params: {
+                    clientInfo: { name: 'inspector', version: '1.0.0' }
+                }
+            }
+        }
+    });
+});
 app.post('/mcp/inspect', async (req, res) => {
     try {
         const { jsonrpc, id, method, params } = req.body;
