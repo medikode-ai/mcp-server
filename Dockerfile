@@ -1,5 +1,5 @@
-# Use Node.js 24 LTS
-FROM node:24-alpine
+# Use Node.js 24 LTS Alpine (minimal image, no additional packages needed)
+FROM node:24.11.0-alpine
 
 # Set working directory
 WORKDIR /app
